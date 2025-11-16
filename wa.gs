@@ -8,6 +8,7 @@ function kirimnotif(e) {
   // Ambil data dari Google Form
   const nama = e.namedValues["Nama"][0];  
   const nomor = e.namedValues["Nomor Whatsapp"][0]; 
+  const email = e.namedValues["Email"][0];
 
   // Pesan ajakan gabung grup
   const isipesan =
@@ -40,4 +41,12 @@ Sampai bertemu di acara, insyaAllah!`;
   // Eksekusi
   const response = UrlFetchApp.fetch(apiUrl, options);
   Logger.log(response.getContentText());
+
+  MailApp.sendEmail({
+    to: email,
+    subject: "Informasi Grup WhatsApp Seminar",
+    body: isipesan
+  });
+  
+  Logger.log("Email terkirim ke: " + email);
 }
