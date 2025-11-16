@@ -1,68 +1,76 @@
-# 📲 Notifikasi Otomatis WhatsApp  
-### Pelatihan Komdig — MoRagister Nasional
+# 📲 Notifikasi WhatsApp & Email Otomatis  
+### (Google Form → Google Apps Script)
 
-Script ini digunakan untuk mengirim **notifikasi otomatis WhatsApp** kepada peserta Pelatihan Komdig – MoRagister Nasional yang mendaftar melalui Google Form.  
-Sistem ini memastikan **pesan hanya terkirim ke peserta baru**, sehingga **tidak terjadi duplikasi**.
+Script ini digunakan untuk mengirim **notifikasi WhatsApp dan Email secara otomatis** setiap kali ada peserta baru yang mengisi Google Form.  
+Sangat cocok untuk acara seminar, workshop, pelatihan, maupun pendaftaran umum.
 
 ---
 
 ## 🚀 Fitur Utama
-- ✅ Mengirim pesan WhatsApp otomatis ke peserta baru  
-- ✅ Anti-duplikasi (pesan hanya terkirim sekali)  
-- ✅ Template pesan mudah diedit  
-- ✅ Menggunakan Google Apps Script (tanpa server)
+- 🟢 Notifikasi WhatsApp otomatis untuk peserta baru  
+- 🟢 Notifikasi Email otomatis  
+- 🟢 Menggunakan Google Apps Script (tanpa server, gratis)  
+- 🟢 Mudah digunakan dan bisa langsung dipasang di Google Spreadsheet  
 
 ---
 
-## 📌 Cara Kerja
-1. Peserta mengisi Google Form  
-2. Data masuk ke Google Spreadsheet  
-3. Script membaca baris terbaru  
-4. Script mengirim pesan WhatsApp ke nomor peserta  
-5. Script menandai data sebagai **"sudah"** agar tidak mengirim dua kali  
+## 🧩 Script Lengkap
 
----
-
-## 🧩 Contoh Script Notifikasi WhatsApp
-
-> **Catatan:**  
-> - Kolom nama berada di kolom ke-2  
-> - Kolom nomor WhatsApp berada di kolom ke-3  
-> - Kolom status berada di kolom ke-7  
+> Sesuaikan nama kolom Form Anda: **Nama**, **Email**, dan **Nomor Whatsapp**.
 
 ```javascript
-function kirimWA() {
-  const sheet = SpreadsheetApp.getActive().getSheetByName("KONFIRMASI");
-  const lastRow = sheet.getLastRow();
+function kirimnotif(e) {
+  const apiUrl = "https://gateway.baitulabidindarussalam.ponpes.id/send-message";
 
-  const nama = sheet.getRange(lastRow, 2).getValue();
-  const nomor = sheet.getRange(lastRow, 3).getValue();
-  const status = sheet.getRange(lastRow, 7).getValue();
+  const apiKey = "API_KEY_ANDA";
+  const nomorpengirim = "628XXXXXXXXXXX"; // Format internasional
+  const linkgroup = "https://chat.whatsapp.com/XXXXXXXXXXXXXXXX"; // Link grup WA
 
-  // Cek duplikasi
-  if (status === "sudah") {
-    Logger.log("Pesan sudah terkirim sebelumnya. Skip.");
-    return;
-  }
+  // Ambil data dari Google Form
+  const nama = e.namedValues["Nama"][0];
+  const email = e.namedValues["Email"][0];
+  const nomor = e.namedValues["Nomor Whatsapp"][0];
 
-  // Teks pesan
-  const pesan = 
-`Assalamualaikum ${nama},
+  // Template pesan
+  const isipesan =
+`Assalamu'alaikum ${nama},
 
-Terima kasih telah mendaftar *Pelatihan Komdig – MoRagister Nasional!* 🎉
+Terima kasih telah mendaftar acara ini.
 
-Silakan bergabung ke grup WhatsApp resmi:
-👉 https://chat.whatsapp.com/XXXXXXXXXXXX
+Silakan bergabung ke WhatsApp Group resmi melalui link berikut:
+${linkgroup}
 
-Informasi lengkap pelatihan akan disampaikan dalam grup.
-Terima kasih.`;
+Di grup akan disampaikan informasi penting, jadwal, dan materi acara.
+Sampai bertemu, insyaAllah!`;
 
-  // Kirim WA via URL API/link WA
-  const url = "https://api.whatsapp.com/send?phone=" + nomor + "&text=" + encodeURIComponent(pesan);
-  UrlFetchApp.fetch(url);
+  // =====================
+  // 1) KIRIM WHATSAPP
+  // =====================
+  const payload = {
+    api_key: apiKey,
+    sender: nomorpengirim,
+    number: nomor,
+    message: isipesan
+  };
 
-  // Tandai agar tidak terkirim dua kali
-  sheet.getRange(lastRow, 7).setValue("sudah");
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
 
-  Logger.log("Pesan WA terkirim ke: " + nomor);
+  const response = UrlFetchApp.fetch(apiUrl, options);
+  Logger.log("WA Response: " + response.getContentText());
+
+  // =====================
+  // 2) KIRIM EMAIL
+  // =====================
+  MailApp.sendEmail({
+    to: email,
+    subject: "Informasi Grup WhatsApp Acara",
+    body: isipesan
+  });
+
+  Logger.log("Email terkirim ke: " + email);
 }
